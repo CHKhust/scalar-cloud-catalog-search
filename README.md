@@ -1,58 +1,109 @@
-# scalar-cloud-catalog-search
-# Resonant Scalar Cloud Search with Public LVK Data
+# Scalar-cloud tidal-resonance catalog search
 
-This folder contains the manuscript, figure products, postprocessed summary
-tables, and scripts used for the ApJL draft on resonant scalar clouds in public
-LIGO-Virgo-KAGRA compact-binary data.
+This repository contains the analysis code, manuscript source, figures, and derived
+tables used for the scalar-cloud tidal-resonance catalog search.  It is organized
+as a reproducibility package for the paper rather than as a general-purpose
+software library.
 
-The repository intentionally does not include public strain files or public
-posterior HDF5 files.  Those files should be downloaded from GWOSC and the
-corresponding LVK parameter-estimation releases.
+## Contents
 
-## Main Results in This Snapshot
+- `src/` contains the Python and shell scripts used for catalog selection,
+  posterior reweighting, cloud-history postprocessing, injection checks, and
+  figure generation.
+- `campaigns/` contains the Slurm campaign scripts used on the cluster for the
+  high-resolution and validation runs.
+- `data/derived/` contains the postprocessed CSV and JSON products used in the
+  manuscript figures and numerical statements.
+- `figures/` contains the EPS, PDF, and PNG figure files used by the manuscript.
+- `manuscript/` contains the PRD manuscript source, bibliography, compiled PDF,
+  and cover letter.
+- `docs/` contains a data manifest and a code/data audit.
 
-- Broad eps_B=15 catalog screen: 134 candidate black-hole components from 72
-  events.
-- Final eps_B=15 Ns=800 follow-up: 40 target components completed.
-- Conditional saturated-cloud exclusions: 36 components from 34 events.
-- Tightest direct retained limit: (S_c/M^2)_95 = 6.67e-3 for GW230518_125908
-  at mu = 3.34e-12 eV.
-- Strongest saturated-cloud model-to-limit ratio: 23.6.
-- eps_B=5 gives direct sensitivity but no default T_cloud >= 1e8 yr exclusion.
+The raw public LVK strain and posterior files are not included because they are
+large public data products.  They can be downloaded from GWOSC and Zenodo with
+the manifest/download scripts in `src/`.
 
-GW230518_125908 was also checked with detector subsets.  The validation logs
-show ln B = -0.08 for H1 alone, ln B = 5.47 for L1 alone, ln B = 2.74 for the
-H1,L1 network, and ln B = 1.94 after notching the local L1 band around 44 Hz.
+## Python environment
 
-## Folder Layout
+The plotting and postprocessing scripts require Python 3.10 or newer and the
+packages listed in `requirements.txt`.
 
-- `paper/`: AASTeX manuscript, compiled PDF, references, and figure files.
-- `scripts/`: local postprocessing and figure-generation scripts.
-- `data/eps15_ns800_final/`: final eps_B=15 Ns=800 summary tables and model
-  comparison products.
-- `data/eps5_eps15_catalog/`: lifetime-threshold summary table for eps_B=15
-  and eps_B=5.
-- `validation/`: GW230518_125908 detector-subset validation logs.
-- `hpc_campaigns/`: Slurm campaign scripts used for the final follow-up runs.
+The full catalog scans also require an LVK/LAL environment with `lalsimulation`
+and access to the public strain and posterior files.  The cluster jobs were run
+in a conda environment named `ligo-lal`.
 
-## Reproduce the Local Summary and Figures
+## Reproducing the manuscript figures from included derived data
 
-From the original project root, after unpacking the HPC result tarball:
+From the repository root:
 
 ```bash
-python analyze_eps15_ns800_followup.py \
-  --base hpc_final_20260608_175421 \
-  --outdir analysis_outputs/eps15_ns800_final_20260608_175421
-
-python make_apjl_fig2_catalog_summary.py
-python make_apjl_interval_figure.py
-python make_eps_lifetime_threshold_figures.py
+python src/make_apjl_fig1_mechanism.py
+python src/make_apjl_fig2_catalog_summary.py
+python src/make_prd_fig3_final_intervals.py
+python src/make_eps_lifetime_threshold_figures.py
 ```
 
-The manuscript was compiled with:
+These commands read only `data/derived/` and write updated files to `figures/`.
+They do not download LVK data or rerun the expensive posterior reweighting scans.
+
+## Rebuilding the manuscript
+
+From the repository root:
 
 ```bash
-cd apjl_scalar_cloud_resonance
-latexmk -pdf -interaction=nonstopmode -halt-on-error ms.tex
+cd manuscript
+latexmk -pdf -interaction=nonstopmode -halt-on-error scalar_cloud_PRD_work.tex
 ```
 
+The manuscript directory already includes the bibliography and the PRD PDF used
+at packaging time.
+
+## Rerunning the scan campaigns
+
+The Slurm scripts in `campaigns/` are included for provenance.  They assume a
+cluster layout close to
+
+```bash
+export LIGO_DATA_ROOT=$HOME/LIGO_data_upload
+export ROOT=$HOME/scalar_cloud_ligo
+```
+
+Change these paths before running on another system.  The public data download
+helpers are:
+
+```bash
+python src/build_reweight_target_manifest.py
+python src/download_reweight_target_data.py --help
+python src/prefetch_hpc_ligo_data.py --help
+```
+
+The `src/make_*campaign*.py` helpers generate cluster submission directories
+from the corresponding derived tables.  They are included to document how the
+long scans were launched, but they are not required for reproducing the
+manuscript figures from the packaged data.
+
+## Main derived products used by the paper
+
+- Formal saturated-cloud result:
+  no threshold crossing remains that can be interpreted as a saturated cloud
+  constraint after the \(\ln\Lambda_{\rm prof}\le3\) likelihood requirement.
+- Likelihood-thresholded saturated-cloud diagnostic:
+  `data/derived/analysis_outputs/singlepoint_refine_nmu301/final_threshold_saturated_cloud_crossings_322_Amax0p7_logB3.csv`
+- Refined threshold diagnostic source table:
+  `data/derived/analysis_outputs/singlepoint_refine_nmu301/intervals_322_Amax0p7_logB3/cloud_exclusion_intervals_by_source.csv`
+- Large-amplitude no-logB products, if present, are deprecated diagnostic
+  stress-test products.  They are not used in any published figure, table,
+  retained direct limit, or saturated-cloud threshold diagnostic.  They are
+  kept only to document the superseded workflow and are stored under
+  `data/derived/diagnostics/large_amplitude_no_logB_cut_diagnostic_only/`.
+- Superseded saturated-cloud interval products from the older no-veto workflow
+  are stored under
+  `data/derived/diagnostics/legacy_superseded_outputs/` and are not manuscript
+  inputs.
+- Injection sanity summary:
+  `data/derived/analysis_outputs/injection_exact_sanity_20260620_150845/injection_exact_sanity_results/coverage_by_amplitude.csv`
+- Lifetime-threshold comparison:
+  `data/derived/analysis_outputs/eps5_eps15_catalog/eps15_eps5_survival_threshold_counts.csv`
+
+See `docs/DATA_MANIFEST.md` and `docs/CODE_AUDIT.md` for the file-level summary
+and audit notes.
