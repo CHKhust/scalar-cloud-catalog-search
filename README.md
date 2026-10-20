@@ -1,109 +1,75 @@
-# Scalar-cloud tidal-resonance catalog search
+# Constraints on phenomenological modifications to compact binary gravitational waveforms
 
-This repository contains the analysis code, manuscript source, figures, and derived
-tables used for the scalar-cloud tidal-resonance catalog search.  It is organized
-as a reproducibility package for the paper rather than as a general-purpose
-software library.
+Analysis code, saved numerical results, figures, and manuscript source for the study by Hao-Kang Chen, Pan-Pan Wang, and Cheng-Gang Shao.
 
-## Contents
+## Download
 
-- `src/` contains the Python and shell scripts used for catalog selection,
-  posterior reweighting, cloud-history postprocessing, injection checks, and
-  figure generation.
-- `campaigns/` contains the Slurm campaign scripts used on the cluster for the
-  high-resolution and validation runs.
-- `data/derived/` contains the postprocessed CSV and JSON products used in the
-  manuscript figures and numerical statements.
-- `figures/` contains the EPS, PDF, and PNG figure files used by the manuscript.
-- `manuscript/` contains the PRD manuscript source, bibliography, compiled PDF,
-  and cover letter.
-- `docs/` contains a data manifest and a code/data audit.
+**[Download the analysis package from the NEW release](https://github.com/CHKhust/scalar-cloud-catalog-search/releases/tag/NEW)**
 
-The raw public LVK strain and posterior files are not included because they are
-large public data products.  They can be downloaded from GWOSC and Zenodo with
-the manifest/download scripts in `src/`.
+Open the release page, expand **Assets**, and download the uploaded analysis ZIP. Extract the archive and open its `scalar-cloud-catalog-search` directory. All paths and commands below refer to that extracted directory.
 
-## Python environment
+The uploaded analysis package contains the numerical data. GitHub's automatically generated **Source code** archives correspond to the tagged repository tree. The earlier catalog ZIP retained on the repository homepage is a historical version.
 
-The plotting and postprocessing scripts require Python 3.10 or newer and the
-packages listed in `requirements.txt`.
+## Included material
 
-The full catalog scans also require an LVK/LAL environment with `lalsimulation`
-and access to the public strain and posterior files.  The cluster jobs were run
-in a conda environment named `ligo-lal`.
+| Directory or file | Contents |
+| --- | --- |
+| `manuscript/` | Manuscript TeX source, bibliography, abstract, and figure assets |
+| `release/scalar_cloud_PRD.pdf` | Compiled manuscript |
+| `data/` | Saved nested samples, original weights, run metadata, conditional mass arrays, prior samples, and plotting inputs |
+| `code/` | Analysis code and scripts for checking and reproducing saved results |
+| `code/frozen_reference/` | Original Bilby inference code and configuration |
+| `code/frozen_mapping/` | Conditional superradiant-saturation mass transformation |
+| `tools/` | File verification and manuscript build helpers |
+| `docs/` | Data dictionary, reproduction instructions, and historical-material index |
+| `audit/` | File identities and verification records |
+| `MANIFEST.json` | File sizes and SHA256 checksums |
 
-## Reproducing the manuscript figures from included derived data
+The ten saved analyses contain 410931 weighted samples in total. Each analysis includes 56 sampled parameters, including 40 detector calibration parameters. The package contains four analyses of GW230518_125908 and three recoveries of each of two injected signals. Repeated injection analyses use independent sampler seeds with the same noise realization within each signal set.
 
-From the repository root:
+Four conditional boson rest-energy distributions and two independently generated prior sample sets are included. The mass transformation uses the superradiant-saturation history and induced prior specified in Appendix D.1 of the manuscript. Results from individual analyses retain their original weights and are reported separately.
+
+## Verify and reproduce the saved results
+
+Use a Python environment compatible with `requirements.txt`. From the extracted package directory:
 
 ```bash
-python src/make_apjl_fig1_mechanism.py
-python src/make_apjl_fig2_catalog_summary.py
-python src/make_prd_fig3_final_intervals.py
-python src/make_eps_lifetime_threshold_figures.py
+python -m pip install -r requirements.txt
+python -B tools/verify_repository.py
+python -B code/reproduce_saved_results.py --out build/recomputed
+python -B code/check_injection_truth.py --out build/injection_truth.json
 ```
 
-These commands read only `data/derived/` and write updated files to `figures/`.
-They do not download LVK data or rerun the expensive posterior reweighting scans.
+Use a new output directory or file for each command with `--out`. These commands check and process the archived samples and weights. The original inference environment, data identities, and sampling settings are recorded in the preserved run metadata.
 
-## Rebuilding the manuscript
+Figure reproduction commands and font requirements are given in `docs/REPRODUCTION.md`. The original public strain and posterior inputs are identified in the manuscript and acquired separately.
 
-From the repository root:
+## Build the manuscript
+
+An existing TeX Live or MiKTeX installation with REVTeX 4.2, pdfLaTeX, and BibTeX is required.
 
 ```bash
-cd manuscript
-latexmk -pdf -interaction=nonstopmode -halt-on-error scalar_cloud_PRD_work.tex
+python -B tools/build_manuscript.py --out build/paper
 ```
 
-The manuscript directory already includes the bibliography and the PRD PDF used
-at packaging time.
+If the TeX executables are outside the system PATH, supply their directory with `--tex-bin`. Use a new output directory for each build.
 
-## Rerunning the scan campaigns
+## Historical material
 
-The Slurm scripts in `campaigns/` are included for provenance.  They assume a
-cluster layout close to
+The earlier catalog and diagnostic calculations are indexed in `docs/HISTORICAL_COMPANION.json`. The historical companion archive is a separate distribution file. Its expected filename, size, and SHA256 checksum are recorded in that index.
 
-```bash
-export LIGO_DATA_ROOT=$HOME/LIGO_data_upload
-export ROOT=$HOME/scalar_cloud_ligo
+## Citation
+
+```bibtex
+@misc{Chen2026ScalarCloudCode,
+  author = {Chen, Hao-Kang and Wang, Pan-Pan and Shao, Cheng-Gang},
+  title = {{Scalar-cloud catalog search: Analysis scripts and derived products}},
+  howpublished = {GitHub repository},
+  year = {2026},
+  url = {https://github.com/CHKhust/scalar-cloud-catalog-search}
+}
 ```
 
-Change these paths before running on another system.  The public data download
-helpers are:
+## License and attribution
 
-```bash
-python src/build_reweight_target_manifest.py
-python src/download_reweight_target_data.py --help
-python src/prefetch_hpc_ligo_data.py --help
-```
-
-The `src/make_*campaign*.py` helpers generate cluster submission directories
-from the corresponding derived tables.  They are included to document how the
-long scans were launched, but they are not required for reproducing the
-manuscript figures from the packaged data.
-
-## Main derived products used by the paper
-
-- Formal saturated-cloud result:
-  no threshold crossing remains that can be interpreted as a saturated cloud
-  constraint after the \(\ln\Lambda_{\rm prof}\le3\) likelihood requirement.
-- Likelihood-thresholded saturated-cloud diagnostic:
-  `data/derived/analysis_outputs/singlepoint_refine_nmu301/final_threshold_saturated_cloud_crossings_322_Amax0p7_logB3.csv`
-- Refined threshold diagnostic source table:
-  `data/derived/analysis_outputs/singlepoint_refine_nmu301/intervals_322_Amax0p7_logB3/cloud_exclusion_intervals_by_source.csv`
-- Large-amplitude no-logB products, if present, are deprecated diagnostic
-  stress-test products.  They are not used in any published figure, table,
-  retained direct limit, or saturated-cloud threshold diagnostic.  They are
-  kept only to document the superseded workflow and are stored under
-  `data/derived/diagnostics/large_amplitude_no_logB_cut_diagnostic_only/`.
-- Superseded saturated-cloud interval products from the older no-veto workflow
-  are stored under
-  `data/derived/diagnostics/legacy_superseded_outputs/` and are not manuscript
-  inputs.
-- Injection sanity summary:
-  `data/derived/analysis_outputs/injection_exact_sanity_20260620_150845/injection_exact_sanity_results/coverage_by_amplitude.csv`
-- Lifetime-threshold comparison:
-  `data/derived/analysis_outputs/eps5_eps15_catalog/eps15_eps5_survival_threshold_counts.csv`
-
-See `docs/DATA_MANIFEST.md` and `docs/CODE_AUDIT.md` for the file-level summary
-and audit notes.
+See `LICENSE_NOTICE.md` in the analysis package for licensing information and third-party attribution.
